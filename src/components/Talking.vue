@@ -31,13 +31,19 @@
           const that =this;
         this.$root.Bus.$on("talkingListenToMessage",(data) => {
           this.talker=data;
-          console.log(this.talker);
           socket.emit('getMemory',{
             friendAccount:this.talker
           });
           socket.on('sendMemory',function (data) {
             that.wordList=data.wordList;
           });
+          socket.on('reciveMsg',function (data) {
+            if(data.flag === true){
+              socket.emit('getMemory',{
+                friendAccount:that.talker
+              });
+            }
+          })
         })
       },
       beforeDestroy(){

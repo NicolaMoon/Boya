@@ -30,6 +30,7 @@
                   socket.emit('getMemory',{
                     friendAccount:that.talker
                   });
+                  that.msg='';
                 }
               })
             }

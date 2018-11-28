@@ -38,26 +38,43 @@ io.sockets.on('connection',function (socket) {
                     });
 
                     //将登录上线信息推送给好友
-                    db.query('select * from friend where account='+data.account,(res2) => {
-                        if(res2.length >= 1){
-                            for(let item of res2){
-                                db.query('select groupId from friend where account='+item.friendAccount+' and friendAccount='+item.account,function (res3) {
-                                    if(res3.length === 1){
-                                        if(item.friendAccount in users){
-                                            users[item.friendAccount].emit('changeOnline',{
-                                                flag:1,
-                                                groupId:res3[0].groupId,
-                                                account:item.friendAccount
-                                            });
-                                        }
-                                    }
-                                })
+                    let sqllan1='select * from friend where account in ';
+                    sqllan1+='(select friendAccount from friend where account='+data.account+')';
+                    sqllan1+=' and friendAccount='+data.account;
+                    db.query(sqllan1,function (res2) {
+                        for(let item of res2){
+                            if(item.account in users){
+                                users[item.account].emit('changeOnline',{
+                                    flag:1,
+                                    groupId:item.groupId,
+                                    account:item.friendAccount
+                                });
                             }
                         }
-                    });
+                    })
+
+                    //回调地狱
+                    // db.query('select * from friend where account='+data.account,(res2) => {
+                    //     if(res2.length >= 1){
+                    //         for(let item of res2){
+                    //             db.query('select groupId from friend where account='+item.friendAccount+' and friendAccount='+item.account,function (res3) {
+                    //                 if(res3.length === 1){
+                    //                     if(item.friendAccount in users){
+                    //                         users[item.friendAccount].emit('changeOnline',{
+                    //                             flag:1,
+                    //                             groupId:res3[0].groupId,
+                    //                             account:item.friendAccount
+                    //                         });
+                    //                     }
+                    //                 }
+                    //             })
+                    //         }
+                    //     }
+                    // });
 
                     //修改账号状态
                     db.query('UPDATE user SET online=1 where account='+data.account,(res2) => {});
+
                     //获取并发送信息列表
                     //获取朋友列表
                     db.query('select * from friend where account='+data.account,function (res2) {
@@ -115,6 +132,7 @@ io.sockets.on('connection',function (socket) {
                             });
                         }
                     });
+
                     //获取并发送朋友群组表
                     db.query('select * from groups where account='+data.account,function (res2) {
                         let groupList=[];
@@ -176,70 +194,100 @@ io.sockets.on('connection',function (socket) {
 
                     //监听事件，发送历史消息
                     socket.on('getMemory',function (data2) {
-                        db.query('select memoryId from friend where account='+data.account+' and friendAccount='+data2.friendAccount,function (res2) {
-                            if(res2.length === 1){
-                                db.query('select * from memory where memoryId='+res2[0].memoryId+' order by time desc',function (res3) {
-                                    if(res3.length >= 1){
-                                        let wordList=[];
-                                        if(res3.length >5){
-                                            for(let i=4;i>=0;i--){
-                                                let thisWord={};
-                                                let item=res3[i];
-                                                db.query('select username from user where account='+item.talker,function (res4) {
-                                                    if(res4.length === 1){
-                                                        thisWord.name=res4[0].username;
-
-                                                        var nowTime=new Date().Format('dd/MM/yyyy');
-                                                        if(nowTime === item.time.Format('dd/MM/yyyy')){
-                                                            thisWord.time=item.time.Format('hh:mm');
-                                                        }else{
-                                                            thisWord.time=item.time.Format('MM-dd');
-                                                        }
-
-                                                        thisWord.msg=item.msg;
-                                                        wordList.push(thisWord);
-                                                        if(i === 0){
-                                                            socket.emit('sendMemory',{
-                                                                wordList:wordList
-                                                            });
-                                                        }
-                                                    }
-                                                })
-                                            }
-                                        }else{
-                                            for(let i=res3.length-1;i>=0;i--){
-                                                let thisWord={};
-                                                let item=res3[i];
-                                                db.query('select username from user where account='+item.talker,function (res4) {
-                                                    if(res4.length === 1){
-                                                        thisWord.name=res4[0].username;
-
-                                                        var nowTime=new Date().Format('dd/MM/yyyy');
-                                                        if(nowTime === item.time.Format('dd/MM/yyyy')){
-                                                            thisWord.time=item.time.Format('hh:mm');
-                                                        }else{
-                                                            thisWord.time=item.time.Format('MM-dd');
-                                                        }
-
-                                                        thisWord.msg=item.msg;
-                                                        wordList.push(thisWord);
-                                                        if(i === 0){
-                                                            socket.emit('sendMemory',{
-                                                                wordList:wordList
-                                                            });
-                                                        }
-                                                    }
-                                                })
-                                            }
-                                        }
+                        let sqllan='select * from memory join user on memory.talker=user.account where memoryId in ';
+                        sqllan+='(select memoryId from friend where account='+data.account+' and friendAccount='+data2.friendAccount+')';
+                        sqllan+=' order by time desc limit 5';
+                        db.query(sqllan,function (res2) {
+                            if(res2.length >= 1){
+                                let wordList=[];
+                                for(let i=res2.length-1;i>=0;i--){
+                                    let thisWord={};
+                                    let item=res2[i];
+                                    thisWord.name=item.username;
+                                    var nowTime=new Date().Format('dd/MM/yyyy');
+                                    if(nowTime === item.time.Format('dd/MM/yyyy')){
+                                        thisWord.time=item.time.Format('hh:mm');
                                     }else{
+                                        thisWord.time=item.time.Format('MM-dd');
+                                    }
+
+                                    thisWord.msg=item.msg;
+                                    wordList.push(thisWord);
+                                    if(i === 0){
                                         socket.emit('sendMemory',{
-                                            wordList:[]
+                                            wordList:wordList
                                         });
                                     }
-                                })
+                                }
                             }
-                        })
+                        });
+
+                        //回调地域，而且由于异步原因，数据库返回结果push进数组的时候，顺序出现问题
+                        //监听事件，发送历史消息
+                        // db.query('select memoryId from friend where account='+data.account+' and friendAccount='+data2.friendAccount,function (res2) {
+                        //     if(res2.length === 1){
+                        //         db.query('select * from memory where memoryId='+res2[0].memoryId+' order by time desc',function (res3) {
+                        //             if(res3.length >= 1){
+                        //                 let wordList=[];
+                        //                 if(res3.length >5){
+                        //                     for(let i=4;i>=0;i--){
+                        //                         let thisWord={};
+                        //                         let item=res3[i];
+                        //                         db.query('select username from user where account='+item.talker,function (res4) {
+                        //                             if(res4.length === 1){
+                        //                                 thisWord.name=res4[0].username;
+                        //
+                        //                                 var nowTime=new Date().Format('dd/MM/yyyy');
+                        //                                 if(nowTime === item.time.Format('dd/MM/yyyy')){
+                        //                                     thisWord.time=item.time.Format('hh:mm');
+                        //                                 }else{
+                        //                                     thisWord.time=item.time.Format('MM-dd');
+                        //                                 }
+                        //
+                        //                                 thisWord.msg=item.msg;
+                        //                                 wordList.push(thisWord);
+                        //                                 if(i === 0){
+                        //                                     socket.emit('sendMemory',{
+                        //                                         wordList:wordList
+                        //                                     });
+                        //                                 }
+                        //                             }
+                        //                         })
+                        //                     }
+                        //                 }else{
+                        //                     for(let i=res3.length-1;i>=0;i--){
+                        //                         let thisWord={};
+                        //                         let item=res3[i];
+                        //                         db.query('select username from user where account='+item.talker,function (res4) {
+                        //                             if(res4.length === 1){
+                        //                                 thisWord.name=res4[0].username;
+                        //
+                        //                                 var nowTime=new Date().Format('dd/MM/yyyy');
+                        //                                 if(nowTime === item.time.Format('dd/MM/yyyy')){
+                        //                                     thisWord.time=item.time.Format('hh:mm');
+                        //                                 }else{
+                        //                                     thisWord.time=item.time.Format('MM-dd');
+                        //                                 }
+                        //
+                        //                                 thisWord.msg=item.msg;
+                        //                                 wordList.push(thisWord);
+                        //                                 if(i === 0){
+                        //                                     socket.emit('sendMemory',{
+                        //                                         wordList:wordList
+                        //                                     });
+                        //                                 }
+                        //                             }
+                        //                         })
+                        //                     }
+                        //                 }
+                        //             }else{
+                        //                 socket.emit('sendMemory',{
+                        //                     wordList:[]
+                        //                 });
+                        //             }
+                        //         })
+                        //     }
+                        // })
                     });
 
                     //接收消息并发送给对方
@@ -250,6 +298,11 @@ io.sockets.on('connection',function (socket) {
                                     socket.emit('gotMsg',{
                                         flag:true
                                     });
+                                    if(data2.talker in users){
+                                        users[data2.talker].emit('reciveMsg',{
+                                            flag:true
+                                        })
+                                    }
                                 })
                             }
                         })

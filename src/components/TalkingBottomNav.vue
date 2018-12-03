@@ -28,7 +28,9 @@
               socket.on('gotMsg',function (data) {
                 if(data.flag === true){
                   socket.emit('getMemory',{
-                    friendAccount:that.talker
+                    friendAccount:that.talker,
+                    num:8
+                  },function () {
                   });
                   that.msg='';
                 }

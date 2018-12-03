@@ -37,6 +37,9 @@ export default {
         }
       }
     });
+    socket.on('changeMsgList',() => {
+      socket.emit('wantMsgList');
+    });
   },
   beforeDestroy(){
     this.$root.Bus.$off('appListenToLogin');

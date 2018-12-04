@@ -2,7 +2,7 @@
   <div>
     <talking-app-bar></talking-app-bar>
     <div class="space">
-      <div v-show="false">
+      <div v-show="progressShow" class="progress">
         <mu-flex justify-content="center">
           <mu-circular-progress class="demo-circular-progress" :size="24"></mu-circular-progress>
         </mu-flex>
@@ -35,7 +35,8 @@
           return{
             talker:'',
             wordList:[],
-            memoryNum:8
+            memoryNum:8,
+            progressShow:false
           }
       },
       beforeCreate(){
@@ -92,7 +93,11 @@
           const that=this;
           this.scroll.on('touchEnd',function (pos) {
             if (pos.y > 50) {
-              that.getMoreMemory();
+              that.progressShow=true;
+              let timer=setTimeout(function () {
+                that.getMoreMemory();
+                clearTimeout(timer);
+              },750);
             }
           });
         },
@@ -106,6 +111,7 @@
             that.$nextTick(() => {
               that.initScroll();
             });
+            that.progressShow=false;
           });
         }
       }
@@ -118,5 +124,8 @@
     left: 0;
     top: 0;
     overflow: hidden;
+  }
+  .progress{
+    margin-bottom: 8px;
   }
 </style>

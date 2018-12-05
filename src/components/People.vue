@@ -39,7 +39,7 @@
       </mu-list>
       <mu-list v-if="active === 1">
         <mu-divider></mu-divider>
-        <div v-for="crowd in crowdList" :key="crowd.id">
+        <div v-for="crowd in crowddata" :key="crowd.id">
           <mu-list-item avatar button :ripple="false" @click="sendMsg(crowd.name)" to="/otherPerson">
             <mu-list-item-action>
               <mu-avatar>
@@ -76,7 +76,7 @@
     export default {
         name: "People",
       components: {BottomNav, AppBar},
-      props:['groupdata'],
+      props:['groupdata','crowddata'],
       data(){
           return {
             open: '',

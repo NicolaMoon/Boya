@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <router-view :userdata="userInfo" :msgdata="msgList" :groupdata="groupList"/>
+    <router-view :userdata="userInfo" :msgdata="msgList" :groupdata="groupList" :crowddata="crowdList" :crowdmsg="crowdMsg"/>
   </div>
 </template>
 
@@ -12,7 +12,9 @@ export default {
     return{
       userInfo:{},
       msgList:[],
-      groupList:[]
+      groupList:[],
+      crowdList: [],
+      crowdMsg: []
     }
   },
   mounted(){
@@ -24,6 +26,12 @@ export default {
     });
     socket.on('getGroupList',(data) => {
       this.groupList=data.groupList;
+    });
+    socket.on('getCrowdList',(data) => {
+      this.crowdList=data.crowdList;
+    });
+    socket.on('getCrowdMsgList',(data) => {
+      this.crowdMsg=data.crowdMsg;
     });
     socket.on('changeOnline',(data) => {
       console.log(data.flag);
@@ -39,6 +47,9 @@ export default {
     });
     socket.on('changeMsgList',() => {
       socket.emit('wantMsgList');
+    });
+    socket.on('changeCrowdMsg',() => {
+      socket.emit('wantCrowdMsg');
     });
   },
   beforeDestroy(){

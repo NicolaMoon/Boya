@@ -16,7 +16,7 @@
         </div>
       </div>
     </div>
-    <talking-bottom-nav :userdata="userdata" :talker="talker"></talking-bottom-nav>
+    <talking-bottom-nav :userdata="userdata" :talker="talker" :type="type"></talking-bottom-nav>
   </div>
 </template>
 
@@ -34,6 +34,7 @@
       data(){
           return{
             talker:'',
+            type:0,
             wordList:[],
             memoryNum:8,
             progressShow:false
@@ -66,13 +67,41 @@
               });
             }
           });
-        })
+        });
+        this.$root.Bus.$on("talkingListenToMessage2",(data) => {
+          this.talker=data.id;
+          this.type=data.type;
+          socket.emit('getMemory2',{
+            id:this.talker,
+            num:8
+          },function () {
+            that.$nextTick(() => {
+              that.initScroll();
+            });
+          });
+          socket.on('sendMemory',function (data) {
+            that.wordList=data.wordList;
+          });
+          socket.on('reciveMsg',function (data) {
+            if(data.flag === true){
+              socket.emit('getMemory2',{
+                id:that.talker,
+                num:8
+              },function () {
+                that.$nextTick(() => {
+                  that.initScroll();
+                });
+              });
+            }
+          });
+        });
       },
       mounted(){
           this.resize();
       },
       beforeDestroy(){
         this.$root.Bus.$off("talkingListenToMessage");
+        this.$root.Bus.$off("talkingListenToMessage2");
       },
       methods:{
         resize(){
@@ -104,15 +133,27 @@
         getMoreMemory(){
           const that=this;
           that.memoryNum+=8;
-          socket.emit('getMemory',{
-            friendAccount:that.talker,
-            num:that.memoryNum
-          },function () {
-            that.$nextTick(() => {
-              that.initScroll();
+          if(this.type === 0){
+            socket.emit('getMemory',{
+              friendAccount:that.talker,
+              num:that.memoryNum
+            },function () {
+              that.$nextTick(() => {
+                that.initScroll();
+              });
+              that.progressShow=false;
             });
-            that.progressShow=false;
-          });
+          }else if(this.type === 1){
+            socket.emit('getMemory2',{
+              id:that.talker,
+              num:that.memoryNum
+            },function () {
+              that.$nextTick(() => {
+                that.initScroll();
+              });
+              that.progressShow=false;
+            });
+          }
         }
       }
     }

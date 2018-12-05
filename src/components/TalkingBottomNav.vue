@@ -11,7 +11,7 @@
   import socket from '../socket';
     export default {
         name: "TalkingBottomNav",
-      props:['userdata','talker'],
+      props:['userdata','talker','type'],
       data(){
         return{
           msg:''
@@ -21,20 +21,37 @@
           sendMsg(){
             const that=this;
             if(this.msg!=''){
-              socket.emit('sendMsg',{
-                talker:this.talker,
-                msg:this.msg
-              });
-              socket.on('gotMsg',function (data) {
-                if(data.flag === true){
-                  socket.emit('getMemory',{
-                    friendAccount:that.talker,
-                    num:8
-                  },function () {
-                  });
-                  that.msg='';
-                }
-              })
+              if(this.type === 0){
+                socket.emit('sendMsg',{
+                  talker:this.talker,
+                  msg:this.msg
+                });
+                socket.on('gotMsg',function (data) {
+                  if(data.flag === true){
+                    socket.emit('getMemory',{
+                      friendAccount:that.talker,
+                      num:8
+                    },function () {
+                    });
+                    that.msg='';
+                  }
+                });
+              }else if(this.type === 1){
+                socket.emit('sendMsg2',{
+                  talker:this.talker,
+                  msg:this.msg
+                });
+                socket.on('gotMsg',function (data) {
+                  if(data.flag === true){
+                    socket.emit('getMemory2',{
+                      id:that.talker,
+                      num:8
+                    },function () {
+                    });
+                    that.msg='';
+                  }
+                });
+              }
             }
           }
       }

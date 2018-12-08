@@ -57,14 +57,17 @@
           });
           socket.on('reciveMsg',function (data) {
             if(data.flag === true){
-              socket.emit('getMemory',{
-                friendAccount:that.talker,
-                num:8
-              },function () {
-                that.$nextTick(() => {
-                  that.initScroll();
+              var test=window.location.hash;
+              if(test==="#/talking"){
+                socket.emit('getMemory',{
+                  friendAccount:that.talker,
+                  num:8
+                },function () {
+                  that.$nextTick(() => {
+                    that.initScroll();
+                  });
                 });
-              });
+              }
             }
           });
         });
@@ -84,14 +87,17 @@
           });
           socket.on('reciveMsg',function (data) {
             if(data.flag === true){
-              socket.emit('getMemory2',{
-                id:that.talker,
-                num:8
-              },function () {
-                that.$nextTick(() => {
-                  that.initScroll();
+              var test=window.location.hash;
+              if(test==="#/talking"){
+                socket.emit('getMemory2',{
+                  id:that.talker,
+                  num:8
+                },function () {
+                  that.$nextTick(() => {
+                    that.initScroll();
+                  });
                 });
-              });
+              }
             }
           });
         });
@@ -102,6 +108,7 @@
       beforeDestroy(){
         this.$root.Bus.$off("talkingListenToMessage");
         this.$root.Bus.$off("talkingListenToMessage2");
+        socket.removeAllListeners(['sendMemory','reciveMsg']);
       },
       methods:{
         resize(){

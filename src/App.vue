@@ -34,7 +34,6 @@ export default {
       this.crowdMsg=data.crowdMsg;
     });
     socket.on('changeOnline',(data) => {
-      console.log(data.flag);
       for(var item of this.groupList){
         if(item.id === data.groupId){
           if(data.flag === 0){
